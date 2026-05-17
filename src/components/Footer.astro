@@ -240,6 +240,7 @@ const { lang } = Astro.props;
 
   .newsletter-input {
     flex: 1;
+    min-width: 0;
     padding: 11px 16px;
     border: 1px solid #ddd6cc;
     border-radius: 8px;
@@ -273,6 +274,18 @@ const { lang } = Astro.props;
     cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
+  }
+
+  @media (max-width: 480px) {
+    .newsletter-form {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .newsletter-btn {
+      width: 100%;
+      padding: 12px 22px;
+    }
   }
 
   .newsletter-btn:hover {

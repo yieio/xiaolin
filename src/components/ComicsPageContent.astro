@@ -500,7 +500,7 @@ const showPagination = totalPages > 1;
     letter-spacing: 0.04em;
   }
 
-  .pagination {
+  :global(.pagination) {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -508,7 +508,7 @@ const showPagination = totalPages > 1;
     padding: 24px 20px 40px;
   }
 
-  .pagination-btn {
+  :global(.pagination-btn) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -525,16 +525,16 @@ const showPagination = totalPages > 1;
     letter-spacing: 0.02em;
   }
 
-  .pagination-btn:active {
+  :global(.pagination-btn:active) {
     transform: scale(0.96);
   }
 
-  .pagination-btn:hover {
+  :global(.pagination-btn:hover) {
     border-color: #333;
     background: #fafafa;
   }
 
-  .pagination-btn.disabled {
+  :global(.pagination-btn.disabled) {
     color: #ccc;
     border-color: #eee;
     background: #fafafa;
@@ -542,12 +542,12 @@ const showPagination = totalPages > 1;
     pointer-events: none;
   }
 
-  .pagination-btn svg {
+  :global(.pagination-btn svg) {
     width: 14px;
     height: 14px;
   }
 
-  .pagination-info {
+  :global(.pagination-info) {
     font-family: 'Noto Sans SC', sans-serif;
     font-size: 12px;
     color: var(--text-muted);
@@ -580,6 +580,8 @@ const showPagination = totalPages > 1;
     activeTag: "",
     isTagMode: false,
     tagTotal: 0,
+    tagPage: 1,
+    tagTotalPages: 1,
     liked: new Set(),
     detailComic: null,
     tagDrawerOpen: false
@@ -591,6 +593,10 @@ const showPagination = totalPages > 1;
   const featuredData = JSON.parse(document.getElementById("featured-data").textContent || "[]");
   const COMICS = comicsData;
   const SSR_COMICS = [...comicsData];
+  const SSR_PAGINATION = [];
+  document.querySelectorAll(".pagination").forEach(el => {
+    SSR_PAGINATION.push(el.innerHTML);
+  });
 
   const comicsById = new Map();
   for (const c of comicsData) comicsById.set(c.id, c);
@@ -1098,6 +1104,53 @@ const showPagination = totalPages > 1;
     });
   }
 
+  function renderTagPagination() {
+    const tagPage = state.tagPage;
+    const tagTotalPages = state.tagTotalPages;
+    const lang = window.location.pathname.split("/")[1];
+
+    const prevDisabled = tagPage <= 1;
+    const nextDisabled = tagPage >= tagTotalPages;
+
+    const arrowLeft = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>';
+    const arrowRight = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>';
+
+    const prevText = lang === "zh" ? "上一页" : "Previous";
+    const nextText = lang === "zh" ? "下一页" : "Next";
+
+    const prevHtml = prevDisabled
+      ? `<span class="pagination-btn disabled">${arrowLeft} ${prevText}</span>`
+      : `<a class="pagination-btn" data-direction="prev">${arrowLeft} ${prevText}</a>`;
+
+    const infoHtml = `<span class="pagination-info">${lang === "zh" ? `第 ${tagPage} / ${tagTotalPages} 页` : `Page ${tagPage} / ${tagTotalPages}`}</span>`;
+
+    const nextHtml = nextDisabled
+      ? `<span class="pagination-btn disabled">${nextText} ${arrowRight}</span>`
+      : `<a class="pagination-btn" data-direction="next">${nextText} ${arrowRight}</a>`;
+
+    document.querySelectorAll(".pagination").forEach(el => {
+      el.innerHTML = prevHtml + infoHtml + nextHtml;
+    });
+  }
+
+  async function loadTagPage(page) {
+    if (!state.activeTag) return;
+    state.tagPage = page;
+    const lang = window.location.pathname.split("/")[1];
+    try {
+      const result = await window.__getComicsByTag(state.activeTag, lang, page, 20);
+      state.tagTotal = result.total;
+      state.tagTotalPages = Math.ceil(result.total / 20) || 1;
+      COMICS.length = 0;
+      COMICS.push(...result.items);
+      rebuildComicsById(COMICS);
+      renderAll();
+      renderTagPagination();
+    } catch (e) {
+      console.error("Tag page load failed:", e);
+    }
+  }
+
   function setupTagFilter() {
     const tagFilter = document.getElementById("tag-filter");
     const tagDrawerGrid = document.getElementById("tag-drawer-grid");
@@ -1112,19 +1165,25 @@ const showPagination = totalPages > 1;
         COMICS.push(...SSR_COMICS);
         state.isTagMode = false;
         rebuildComicsById(COMICS);
+        document.querySelectorAll(".pagination").forEach((el, i) => {
+          el.innerHTML = SSR_PAGINATION[i] || "";
+        });
         renderAll();
         showPaginationElements(true);
       } else {
         state.isTagMode = true;
+        state.tagPage = 1;
         const lang = window.location.pathname.split("/")[1];
         try {
           const result = await window.__getComicsByTag(tag, lang, 1, 20);
           state.tagTotal = result.total;
+          state.tagTotalPages = Math.ceil(result.total / 20) || 1;
           COMICS.length = 0;
           COMICS.push(...result.items);
           rebuildComicsById(COMICS);
           renderAll();
-          showPaginationElements(false);
+          renderTagPagination();
+          showPaginationElements(true);
         } catch (e) {
           console.error("Tag filter failed:", e);
         }
@@ -1257,10 +1316,25 @@ const showPagination = totalPages > 1;
     window.addEventListener("hashchange", checkHash);
   }
 
+  function setupTagPagination() {
+    document.querySelectorAll(".pagination").forEach(el => {
+      el.addEventListener("click", (e) => {
+        if (!state.isTagMode) return;
+        const btn = e.target.closest(".pagination-btn");
+        if (!btn || btn.classList.contains("disabled")) return;
+        const direction = btn.dataset.direction;
+        if (!direction) return;
+        const newPage = direction === "prev" ? state.tagPage - 1 : state.tagPage + 1;
+        loadTagPage(newPage);
+      });
+    });
+  }
+
   renderAll();
   showPaginationElements(true);
   setupTagFilter();
   setupWaterfallClicks();
   setupCarouselClicks();
+  setupTagPagination();
 })();
 </script>

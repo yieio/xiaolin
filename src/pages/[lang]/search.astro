@@ -22,22 +22,31 @@ if (!VALID_LOCALES.includes(lang)) {
 
 const typedLang = lang as Locale;
 const q = Astro.url.searchParams.get("q") || "";
+const rawPage = parseInt(Astro.url.searchParams.get("page") || "1", 10);
+const searchPage = rawPage >= 1 ? rawPage : 1;
+const PAGE_SIZE = 20;
 
 let items: Awaited<ReturnType<typeof searchComics>>["items"] = [];
 let total = 0;
+let searchTotalPages = 1;
 let error: string | null = null;
 
 if (q) {
   try {
-    const result = await searchComics({ keyword: q, sort: "default" });
+    const result = await searchComics({ keyword: q, sort: "default", page: searchPage, pageSize: PAGE_SIZE });
     items = result.items;
     total = result.total;
+    searchTotalPages = Math.ceil(total / PAGE_SIZE) || 1;
   } catch (e) {
     error = e instanceof Error ? e.message : "Search failed";
   }
 }
 
 const hotWords = typedLang === "zh" ? HOT_ZH : HOT_EN;
+
+const showSearchPagination = q && !error && items.length > 0 && searchTotalPages > 1;
+const prevSearchUrl = `/${typedLang}/search/?q=${encodeURIComponent(q)}&page=${searchPage - 1}`;
+const nextSearchUrl = `/${typedLang}/search/?q=${encodeURIComponent(q)}&page=${searchPage + 1}`;
 ---
 
 <BaseLayout
@@ -128,8 +137,42 @@ const hotWords = typedLang === "zh" ? HOT_ZH : HOT_EN;
             </p>
           </div>
         )
-      } 
+      }
   </div>
+
+  {
+    showSearchPagination && (
+      <div class="pagination" id="pagination-search">
+        {
+          searchPage > 1 ? (
+            <a class="pagination-btn" href={prevSearchUrl}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+              {typedLang === "zh" ? "上一页" : "Previous"}
+            </a>
+          ) : (
+            <span class="pagination-btn disabled">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+              {typedLang === "zh" ? "上一页" : "Previous"}
+            </span>
+          )
+        }
+        <span class="pagination-info">{typedLang === "zh" ? `第 ${searchPage} / ${searchTotalPages} 页` : `Page ${searchPage} / ${searchTotalPages}`}</span>
+        {
+          searchPage < searchTotalPages ? (
+            <a class="pagination-btn" href={nextSearchUrl}>
+              {typedLang === "zh" ? "下一页" : "Next"}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+            </a>
+          ) : (
+            <span class="pagination-btn disabled">
+              {typedLang === "zh" ? "下一页" : "Next"}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+            </span>
+          )
+        }
+      </div>
+    )
+  }
 
   <div class="overlay-backdrop" id="backdrop"></div>
 
@@ -751,5 +794,60 @@ const hotWords = typedLang === "zh" ? HOT_ZH : HOT_EN;
   .overlay-backdrop.visible {
     opacity: 1;
     visibility: visible;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px 20px 64px;
+  }
+
+  .pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+  }
+
+  .pagination-btn:active {
+    transform: scale(0.96);
+  }
+
+  .pagination-btn:hover {
+    border-color: #333;
+    background: #fafafa;
+  }
+
+  .pagination-btn.disabled {
+    color: #ccc;
+    border-color: #eee;
+    background: #fafafa;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .pagination-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pagination-info {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
   }
 </style>
