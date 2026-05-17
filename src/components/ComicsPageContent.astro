@@ -1,0 +1,1266 @@
+---
+import type { Comic, LabelItem } from "@lib/api";
+import { t, formatLikes } from "@lib/i18n";
+import type { Locale } from "@lib/i18n";
+import Carousel from "./Carousel.astro";
+import ComicCard from "./ComicCard.astro";
+import ComicDrawer from "./ComicDrawer.astro";
+
+export interface Props {
+  lang: Locale;
+  comics: Comic[];
+  featured: Comic[];
+  labels: LabelItem[];
+  currentPage: number;
+  totalPages: number;
+  total: number;
+}
+
+const {
+  lang,
+  comics,
+  featured,
+  labels,
+  currentPage,
+  totalPages,
+  total,
+} = Astro.props;
+
+const prevPageUrl = currentPage <= 2 ? `/${lang}/` : `/${lang}/page/${currentPage - 1}`;
+const nextPageUrl = `/${lang}/page/${currentPage + 1}`;
+const showPagination = totalPages > 1;
+---
+
+<Carousel comics={featured} lang={lang} />
+
+<div class="inner-container" id="page-section">
+  <div class="tag-filter" id="tag-filter">
+    <button class="tag-btn active" data-tag="">{lang === "zh" ? "全部" : "All"}</button>
+    {labels.slice(0, 4).map((label) => (
+      <button class="tag-btn" data-tag={label.name}>{label.name}</button>
+    ))}
+    <button class="more-btn" id="more-btn" class:list={[{ hidden: labels.length <= 4 }]}>{t("tags.more", lang)}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"></path></svg>
+    </button>
+  </div>
+
+  <div class="works-count" id="works-count">{lang === "zh" ? `共 ${total} 幅作品` : `${total} works`}</div>
+</div>
+
+{
+  showPagination && (
+    <div class="pagination" id="pagination-top">
+      {
+        currentPage > 1 ? (
+          <a class="pagination-btn" href={prevPageUrl+"#page-section"}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+            {lang === "zh" ? "上一页" : "Previous"}
+          </a>
+        ) : (
+          <span class="pagination-btn disabled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+            {lang === "zh" ? "上一页" : "Previous"}
+          </span>
+        )
+      }
+      <span class="pagination-info">{lang === "zh" ? `第 ${currentPage} / ${totalPages} 页` : `Page ${currentPage} / ${totalPages}`}</span>
+      {
+        currentPage < totalPages ? (
+          <a class="pagination-btn" href={nextPageUrl+"#page-section"}>
+            {lang === "zh" ? "下一页" : "Next"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+          </a>
+        ) : (
+          <span class="pagination-btn disabled">
+            {lang === "zh" ? "下一页" : "Next"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+          </span>
+        )
+      }
+    </div>
+  )
+}
+
+<section class="waterfall-grid" id="waterfall">
+  {comics.map((comic) => (
+    <ComicCard comic={comic} lang={lang} />
+  ))}
+</section>
+
+{
+  showPagination && (
+    <div class="pagination" id="pagination-bottom">
+      {
+        currentPage > 1 ? (
+          <a class="pagination-btn" href={prevPageUrl+"#page-section"}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+            {lang === "zh" ? "上一页" : "Previous"}
+          </a>
+        ) : (
+          <span class="pagination-btn disabled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+            {lang === "zh" ? "上一页" : "Previous"}
+          </span>
+        )
+      }
+      <span class="pagination-info">{lang === "zh" ? `第 ${currentPage} / ${totalPages} 页` : `Page ${currentPage} / ${totalPages}`}</span>
+      {
+        currentPage < totalPages ? (
+          <a class="pagination-btn" href={nextPageUrl+"#page-section"}>
+            {lang === "zh" ? "下一页" : "Next"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+          </a>
+        ) : (
+          <span class="pagination-btn disabled">
+            {lang === "zh" ? "下一页" : "Next"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+          </span>
+        )
+      }
+    </div>
+  )
+}
+
+<div class="empty-state" id="empty-state">
+  <span class="empty-emoji">🔍</span>
+  <span class="empty-text">{t("search.noResults", lang)}</span>
+</div>
+
+<div class="load-sentinel" id="load-sentinel">
+  <div class="load-spinner"></div>
+  <span class="load-text">{lang === "zh" ? "加载中…" : "Loading…"}</span>
+</div>
+
+<div class="overlay-backdrop" id="backdrop"></div>
+
+<div class="tag-drawer" id="tag-drawer">
+  <div class="tag-drawer-handle"></div>
+  <div class="tag-drawer-title">{t("tags.allTags", lang)}</div>
+  <div class="tag-drawer-grid" id="tag-drawer-grid">
+    <button class="tag-btn active" data-tag="">{lang === "zh" ? "全部" : "All"}</button>
+    {labels.map((label) => (
+      <button class="tag-btn" data-tag={label.name}>{label.name}</button>
+    ))}
+  </div>
+</div>
+
+<ComicDrawer lang={lang} comic={comics[0]} />
+
+<style>
+  .tag-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 0 20px;
+    flex-wrap: wrap;
+  }
+
+  .tag-btn, .more-btn {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid #e8e8e8;
+    background: #fafafa;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .tag-btn.active {
+    background: var(--text-primary);
+    color: #ffffff;
+    border-color: var(--text-primary);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+
+  .more-btn {
+    border-color: #ccc;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .more-btn:active {
+    background: #f5f5f5;
+  }
+
+  .more-btn.hidden {
+    display: none;
+  }
+
+  .more-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .works-count {
+    padding: 20px 20px 12px;
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 20px;
+    color: var(--text-faint);
+  }
+
+  .empty-state.visible {
+    display: flex;
+  }
+
+  .empty-state .empty-emoji {
+    font-size: 42px;
+  }
+
+  .empty-state .empty-text {
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+  }
+
+  .overlay-backdrop.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .tag-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    width: 100%;
+    max-width: 1200px;
+    max-height: 60vh;
+    background: #ffffff;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 210;
+    padding: 16px 20px 32px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.35s;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .tag-drawer.visible {
+    transform: translateX(-50%) translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .tag-drawer-handle {
+    width: 32px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin: 0 auto 18px;
+    flex-shrink: 0;
+  }
+
+  .tag-drawer-title {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+
+  .tag-drawer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .load-sentinel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 0 48px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .load-sentinel.visible {
+    opacity: 1;
+  }
+
+  .load-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid #e8e8e8;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .load-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: color 0.2s ease, transform 0.15s ease;
+  }
+
+  .share-btn:active {
+    transform: scale(0.9);
+    color: var(--text-secondary);
+  }
+
+  .detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail-share-btn {
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+
+  .share-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .share-modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .share-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .share-modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 24px 32px;
+    z-index: 1;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .share-modal-overlay.visible .share-modal {
+    transform: translateY(0);
+  }
+
+  .share-modal-handle {
+    width: 32px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .share-modal-title {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+    letter-spacing: 0.03em;
+  }
+
+  .share-platforms {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .share-platform {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 64px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  .share-platform:active {
+    transform: scale(0.9);
+  }
+
+  .share-platform svg {
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+    border-radius: 50%;
+  }
+
+  .share-platform-x svg {
+    background: #000;
+    color: #fff;
+  }
+
+  .share-platform-fb svg {
+    background: #1877F2;
+    color: #fff;
+  }
+
+  .share-platform-wa svg {
+    background: #25D366;
+    color: #fff;
+  }
+
+  .share-platform-pin svg {
+    background: #E60023;
+    color: #fff;
+  }
+
+  .share-platform-copy svg {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .share-platform span {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+
+  .share-modal-close {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 24px;
+    letter-spacing: 0.04em;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px 20px 40px;
+  }
+
+  .pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+  }
+
+  .pagination-btn:active {
+    transform: scale(0.96);
+  }
+
+  .pagination-btn:hover {
+    border-color: #333;
+    background: #fafafa;
+  }
+
+  .pagination-btn.disabled {
+    color: #ccc;
+    border-color: #eee;
+    background: #fafafa;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .pagination-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pagination-info {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+</style>
+
+<script type="application/json" id="api-config" set:html={JSON.stringify({
+  apiBase: import.meta.env.PUBLIC_API_BASE || ""
+})}></script>
+
+<script type="application/json" id="comics-data" set:html={JSON.stringify(comics)}></script>
+
+<script type="application/json" id="featured-data" set:html={JSON.stringify(featured)}></script>
+
+<script type="application/json" id="labels-data" set:html={JSON.stringify(labels)}></script>
+
+<script>
+  import { likeComic, getComicsByTag } from "@lib/api";
+  // @ts-ignore
+  window.__likeComic = likeComic;
+  // @ts-ignore
+  window.__getComicsByTag = getComicsByTag;
+</script>
+
+<script is:inline>
+(function() {
+  const state = {
+    activeTag: "",
+    isTagMode: false,
+    tagTotal: 0,
+    liked: new Set(),
+    detailComic: null,
+    tagDrawerOpen: false
+  };
+
+  const apiConfig = JSON.parse(document.getElementById("api-config").textContent || "{}");
+
+  const comicsData = JSON.parse(document.getElementById("comics-data").textContent || "[]");
+  const featuredData = JSON.parse(document.getElementById("featured-data").textContent || "[]");
+  const COMICS = comicsData;
+  const SSR_COMICS = [...comicsData];
+
+  const comicsById = new Map();
+  for (const c of comicsData) comicsById.set(c.id, c);
+  for (const c of featuredData) if (!comicsById.has(c.id)) comicsById.set(c.id, c);
+  function getComicById(id) { return comicsById.get(id) || null; }
+  function rebuildComicsById(comics) {
+    comicsById.clear();
+    for (const c of comics) comicsById.set(c.id, c);
+    for (const c of featuredData) if (!comicsById.has(c.id)) comicsById.set(c.id, c);
+  }
+
+  const labelsData = JSON.parse(document.getElementById("labels-data").textContent || "[]");
+  const LABELS = labelsData.map(l => l.name);
+  const VISIBLE_LABEL_COUNT = 4;
+
+  function formatLikesLocal(n, lang) {
+    if (lang === "zh" && n >= 10000) {
+      return (n / 10000).toFixed(1) + "万";
+    }
+    return n.toLocaleString(lang === "zh" ? "zh-CN" : "en-US");
+  }
+
+  function getShareUrl(comic) {
+    const base = window.location.origin + window.location.pathname;
+    return base + "comic/" + comic.id;
+  }
+
+  function getShareTitle(comic, lang) {
+    return lang === "zh" ? comic.title.zh : comic.title.en;
+  }
+
+  function getShareText(comic, lang) {
+    return lang === "zh" ? comic.text.zh : comic.text.en;
+  }
+
+  async function handleShare(comic) {
+    const lang = window.location.pathname.split("/")[1];
+    const title = getShareTitle(comic, lang);
+    const text = getShareText(comic, lang);
+    const url = getShareUrl(comic);
+    const shareText = title + " — " + text.replace(/\n/g, " ");
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: shareText, url });
+        return;
+      } catch (e) {
+        if (e.name !== "AbortError") console.error("Share failed:", e);
+      }
+    }
+
+    showShareModal(comic);
+  }
+
+  function buildShareModal(comic, lang) {
+    const url = encodeURIComponent(getShareUrl(comic));
+    const title = encodeURIComponent(getShareTitle(comic, lang));
+    const text = encodeURIComponent(getShareText(comic, lang).replace(/\n/g, " "));
+    const image = encodeURIComponent(comic.image);
+
+    const platforms = [
+      {
+        name: "X",
+        className: "share-platform-x",
+        href: `https://twitter.com/intent/tweet?url=${url}&text=${title}%20%E2%80%94%20${text}`,
+        svg: '<path d="M4 4h4.5l4.9 7 5.6-7H22l-6.6 8.4 6.6 9.6h-4.5l-5.3-7.7-6.1 7.7H2l7.2-9L4 4z"/>'
+      },
+      {
+        name: "Facebook",
+        className: "share-platform-fb",
+        href: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+        svg: '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>'
+      },
+      {
+        name: "WhatsApp",
+        className: "share-platform-wa",
+        href: `https://api.whatsapp.com/send?text=${text}%20${url}`,
+        svg: '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.83 11.83 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.9 11.9 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 0 0-3.48-8.413z"/>'
+      },
+      {
+        name: "Pinterest",
+        className: "share-platform-pin",
+        href: `https://pinterest.com/pin/create/button/?url=${url}&media=${image}&description=${title}%20%E2%80%94%20${text}`,
+        svg: '<path d="M12 0a12 12 0 0 0-4.73 23.1c-.06-.56-.01-1.22.12-1.83l.88-3.74s-.22-.44-.22-1.08c0-1.02.59-1.78 1.32-1.78.62 0 .92.47.92 1.03 0 .62-.4 1.56-.6 2.42-.17.72.36 1.3 1.07 1.3 1.28 0 2.27-1.35 2.27-3.3 0-1.73-1.24-2.94-3-2.94-2.05 0-3.25 1.54-3.25 3.13 0 .62.24 1.28.53 1.64.06.07.07.13.05.2l-.18.74c-.03.13-.1.16-.24.1-.9-.42-1.46-1.73-1.46-2.78 0-2.26 1.64-4.34 4.74-4.34 2.49 0 4.42 1.77 4.42 4.14 0 2.47-1.56 4.46-3.72 4.46-.73 0-1.41-.38-1.64-.82l-.45 1.7c-.16.62-.6 1.4-.9 1.88A12 12 0 1 0 12 0z"/>'
+      },
+      {
+        name: "Copy Link",
+        className: "share-platform-copy",
+        href: "#",
+        svg: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>'
+      }
+    ];
+
+    const platformLinks = platforms.map(p => {
+      if (p.className === "share-platform-copy") {
+        return `<a class="share-platform ${p.className}" href="#" data-action="copy-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.svg}</svg>
+          <span>${p.name}</span>
+        </a>`;
+      }
+      return `<a class="share-platform ${p.className}" href="${p.href}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor">${p.svg}</svg>
+        <span>${p.name}</span>
+      </a>`;
+    }).join("");
+
+    return `
+      <div class="share-modal-backdrop"></div>
+      <div class="share-modal">
+        <div class="share-modal-handle"></div>
+        <div class="share-modal-title">${lang === "zh" ? "分享到" : "Share to"}</div>
+        <div class="share-platforms">${platformLinks}</div>
+        <button class="share-modal-close">${lang === "zh" ? "取消" : "Cancel"}</button>
+      </div>
+    `;
+  }
+
+  function showShareModal(comic) {
+    const existing = document.querySelector(".share-modal-overlay");
+    if (existing) existing.remove();
+
+    const lang = window.location.pathname.split("/")[1];
+    const overlay = document.createElement("div");
+    overlay.className = "share-modal-overlay";
+    overlay.innerHTML = buildShareModal(comic, lang);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    overlay.querySelector(".share-modal-backdrop").addEventListener("click", closeShareModal);
+    overlay.querySelector(".share-modal-close").addEventListener("click", closeShareModal);
+
+    const copyBtn = overlay.querySelector('[data-action="copy-link"]');
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const url = getShareUrl(comic);
+        try {
+          await navigator.clipboard.writeText(url);
+        } catch {
+          const input = document.createElement("input");
+          input.value = url;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand("copy");
+          document.body.removeChild(input);
+        }
+        copyBtn.querySelector("span").textContent = lang === "zh" ? "已复制" : "Copied";
+        setTimeout(() => {
+          copyBtn.querySelector("span").textContent = "Copy Link";
+        }, 1500);
+      });
+    }
+  }
+
+  function closeShareModal() {
+    const overlay = document.querySelector(".share-modal-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("visible");
+    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
+  }
+
+  function getFiltered() {
+    return [...COMICS];
+  }
+
+  function renderAll() {
+    renderTags();
+    renderWaterfall();
+    renderDetailSheet();
+    renderTagDrawer();
+  }
+
+  function renderTags() {
+    const tagFilter = document.getElementById("tag-filter");
+    const tagDrawerGrid = document.getElementById("tag-drawer-grid");
+    const moreBtn = document.getElementById("more-btn");
+
+    [tagFilter, tagDrawerGrid].forEach(container => {
+      if (!container) return;
+      const buttons = container.querySelectorAll(".tag-btn");
+      buttons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tag === state.activeTag);
+      });
+    });
+
+    if (moreBtn) {
+      const tagInDrawer = LABELS.slice(VISIBLE_LABEL_COUNT).includes(state.activeTag);
+      moreBtn.classList.toggle("active", tagInDrawer);
+    }
+  }
+
+  function renderWaterfall() {
+    const filtered = getFiltered();
+    const waterfall = document.getElementById("waterfall");
+    const emptyState = document.getElementById("empty-state");
+    const worksCount = document.getElementById("works-count");
+    const loadSentinel = document.getElementById("load-sentinel");
+    const lang = window.location.pathname.split("/")[1];
+
+    if (!waterfall || !emptyState || !worksCount) return;
+
+    const filterCount = state.isTagMode ? state.tagTotal : filtered.length;
+    worksCount.textContent = lang === "zh" ? `共 ${filterCount} 幅作品` : `${filterCount} works`;
+
+    if (filtered.length === 0) {
+      emptyState.classList.add("visible");
+      waterfall.style.display = "none";
+      if (loadSentinel) loadSentinel.classList.remove("visible");
+      return;
+    }
+
+    emptyState.classList.remove("visible");
+    waterfall.style.display = "block";
+
+    waterfall.innerHTML = "";
+    filtered.forEach(comic => {
+      const card = document.createElement("div");
+      card.className = "waterfall-card";
+      card.dataset.comicId = comic.id;
+
+      const text = lang === "zh" ? comic.text.zh : comic.text.en;
+      const title = lang === "zh" ? comic.title.zh : comic.title.en;
+      const liked = state.liked.has(comic.id);
+
+      card.innerHTML = `
+        <img class="waterfall-image" src="${comic.image}" alt="${title}" draggable="false" loading="lazy" />
+        <p class="waterfall-text">${text.replace(/\n/g, "<br/>")}</p>
+        <div class="waterfall-tags-row">
+          ${(comic.tags[lang] || []).slice(0, 1).map(tag => `<span class="waterfall-tag">${tag}</span>`).join("")}
+        </div>
+        <div class="waterfall-meta">
+          <button class="like-btn ${liked ? "liked" : ""}" data-action="like" data-id="${comic.id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>${formatLikesLocal(comic.likes + (liked ? 1 : 0), lang)}</span>
+          </button>
+          <button class="share-btn" data-action="share" data-id="${comic.id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+        </div>
+      `;
+      waterfall.appendChild(card);
+    });
+  }
+
+  function updateLikeBtn(btn, comicId) {
+    const liked = state.liked.has(comicId);
+    const comic = getComicById(comicId);
+    const lang = window.location.pathname.split("/")[1];
+    if (!comic) return;
+
+    btn.classList.toggle("liked", liked);
+    btn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <span>${formatLikesLocal(comic.likes + (liked ? 1 : 0), lang)}</span>
+    `;
+  }
+
+  function triggerLikeAnimation(container) {
+    if (!container) return;
+    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'like-anim-wrapper';
+
+    wrapper.innerHTML = `
+      <svg class="like-anim-heart" viewBox="0 0 24 24" fill="var(--heart-active)">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    `;
+
+    for (let i = 0; i < 8; i++) {
+      const p = document.createElement('div');
+      p.className = 'like-anim-particle';
+      p.style.setProperty('--angle', (360 / 8) * i + 'deg');
+      p.style.setProperty('--dist', '80px');
+      wrapper.appendChild(p);
+    }
+    for (let i = 0; i < 8; i++) {
+      const p = document.createElement('div');
+      p.className = 'like-anim-particle';
+      p.style.setProperty('--angle', ((360 / 8) * i + 22.5) + 'deg');
+      p.style.setProperty('--dist', '110px');
+      p.style.animationDelay = '0.08s';
+      wrapper.appendChild(p);
+    }
+
+    container.appendChild(wrapper);
+    setTimeout(() => { if (wrapper.parentNode) wrapper.remove(); }, 850);
+  }
+
+  function renderDetailSheet() {
+    const drawer = document.getElementById("comic-drawer");
+    const lang = window.location.pathname.split("/")[1];
+
+    if (!drawer) return;
+
+    if (!state.detailComic) {
+      drawer.classList.remove("visible");
+      return;
+    }
+
+    const comic = state.detailComic;
+    const title = lang === "zh" ? comic.title.zh : comic.title.en;
+    const text = lang === "zh" ? comic.text.zh : comic.text.en;
+    const liked = state.liked.has(comic.id);
+
+    let display = drawer.querySelector(".detail-display");
+    if (!display) {
+      const content = `
+        <div class="detail-header">
+          <div class="detail-header-title"></div>
+          <button class="detail-close" id="detail-close">\u00d7</button>
+        </div>
+        <div class="detail-content">
+          <div class="card-stack">
+            <div class="card-stack-shadow-1"></div>
+            <div class="card-stack-shadow-2"></div>
+            <div class="detail-display">
+              <img class="detail-image" />
+              <p class="detail-text"></p>
+            </div>
+          </div>
+          <div class="detail-meta">
+            <div>
+              <div class="detail-title"></div>
+              <div class="detail-date"></div>
+            </div>
+            <div class="detail-actions">
+              <button class="like-btn" data-action="like" data-id=""></button>
+              <button class="share-btn detail-share-btn" data-action="share" data-id="">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="detail-tags"></div>
+          <div class="detail-author">
+            <div class="detail-author-avatar">\ud83c\udfa8</div>
+            <div class="detail-author-info">
+              <h4></h4>
+              <p></p>
+            </div>
+          </div>
+        </div>
+      `;
+      drawer.innerHTML = content;
+    }
+
+    drawer.querySelector(".detail-header-title").textContent = lang === "zh" ? "漫画详情" : "Comic Details";
+    drawer.querySelector(".detail-image").src = comic.image;
+    drawer.querySelector(".detail-image").alt = title;
+    drawer.querySelector(".detail-text").innerHTML = text.replace(/\n/g, "<br/>");
+    drawer.querySelector(".detail-title").textContent = title;
+    drawer.querySelector(".detail-date").textContent = comic.date;
+    const likeBtn = drawer.querySelector(".like-btn");
+    likeBtn.className = `like-btn ${liked ? "liked" : ""}`;
+    likeBtn.dataset.id = comic.id;
+    likeBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <span>${formatLikesLocal(comic.likes + (liked ? 1 : 0), lang)}</span>
+    `;
+    const shareBtn = drawer.querySelector(".share-btn");
+    if (shareBtn) shareBtn.dataset.id = comic.id;
+
+    drawer.querySelector(".detail-tags").innerHTML = (comic.tags[lang] || []).map(tag =>
+      `<span class="detail-tag">${tag}</span>`
+    ).join("");
+    drawer.querySelector(".detail-author-info h4").textContent = lang === "zh" ? "小林" : "Xiaolin";
+    drawer.querySelector(".detail-author-info p").textContent = lang === "zh" ? "用画笔记录生活的温暖瞬间" : "Capturing life's warm moments";
+
+    const closeBtn = drawer.querySelector("#detail-close");
+    if (closeBtn) {
+      closeBtn.onclick = closeDetail;
+    }
+
+    const detailLikeBtn = drawer.querySelector(".like-btn");
+    if (detailLikeBtn) {
+      detailLikeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const id = parseInt(detailLikeBtn.dataset.id || "0");
+        const wasLiked = state.liked.has(id);
+        if (wasLiked) {
+          state.liked.delete(id);
+        } else {
+          state.liked.add(id);
+          window.__likeComic(id);
+        }
+
+        const comic = getComicById(id);
+        const lang = window.location.pathname.split("/")[1];
+        const liked = state.liked.has(id);
+        detailLikeBtn.className = `like-btn ${liked ? "liked" : ""}`;
+        detailLikeBtn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          <span>${formatLikesLocal(comic.likes + (liked ? 1 : 0), lang)}</span>
+        `;
+
+        document.querySelectorAll(`.like-btn[data-id="${id}"]`).forEach(btn => {
+          if (btn !== detailLikeBtn) {
+            updateLikeBtn(btn, id);
+          }
+        });
+
+        if (!wasLiked) {
+          const display = drawer.querySelector('.detail-display');
+          triggerLikeAnimation(display);
+        }
+      };
+    }
+
+    const detailShareBtn = drawer.querySelector(".share-btn");
+    if (detailShareBtn) {
+      detailShareBtn.onclick = (e) => {
+        e.stopPropagation();
+        const id = parseInt(detailShareBtn.dataset.id || "0");
+        const comic = getComicById(id);
+        if (comic) handleShare(comic);
+      };
+    }
+
+    drawer.classList.add("visible");
+
+    const backdrop = document.getElementById("backdrop");
+    if (backdrop) {
+      backdrop.classList.toggle("visible", state.detailComic !== null || state.tagDrawerOpen);
+      if (backdrop.classList.contains("visible")) {
+        backdrop.onclick = () => {
+          if (state.tagDrawerOpen) {
+            closeTagDrawer();
+          }
+          if (state.detailComic) {
+            closeDetail();
+          }
+        };
+      }
+    }
+  }
+
+  function renderTagDrawer() {
+    const tagDrawer = document.getElementById("tag-drawer");
+    const backdrop = document.getElementById("backdrop");
+
+    if (!tagDrawer || !backdrop) return;
+
+    tagDrawer.classList.toggle("visible", state.tagDrawerOpen);
+    backdrop.classList.toggle("visible", state.tagDrawerOpen || state.detailComic !== null);
+    if (backdrop.classList.contains("visible")) {
+      backdrop.onclick = () => {
+        if (state.tagDrawerOpen) {
+          closeTagDrawer();
+        }
+        if (state.detailComic) {
+          closeDetail();
+        }
+      };
+    }
+  }
+
+  function openDetail(comic) {
+    state.detailComic = comic;
+    renderDetailSheet();
+    document.body.classList.add('scroll-locked');
+  }
+
+  function closeDetail() {
+    state.detailComic = null;
+    renderDetailSheet();
+    renderTagDrawer();
+    document.body.classList.remove('scroll-locked');
+  }
+
+  function openTagDrawer() {
+    state.tagDrawerOpen = true;
+    renderTagDrawer();
+  }
+
+  function closeTagDrawer() {
+    state.tagDrawerOpen = false;
+    renderTagDrawer();
+  }
+
+  function showPaginationElements(show) {
+    document.querySelectorAll(".pagination").forEach(el => {
+      el.style.display = show ? "" : "none";
+    });
+  }
+
+  function setupTagFilter() {
+    const tagFilter = document.getElementById("tag-filter");
+    const tagDrawerGrid = document.getElementById("tag-drawer-grid");
+    const moreBtn = document.getElementById("more-btn");
+
+    async function handleTagClick(tag) {
+      state.activeTag = tag;
+      closeTagDrawer();
+
+      if (tag === "") {
+        COMICS.length = 0;
+        COMICS.push(...SSR_COMICS);
+        state.isTagMode = false;
+        rebuildComicsById(COMICS);
+        renderAll();
+        showPaginationElements(true);
+      } else {
+        state.isTagMode = true;
+        const lang = window.location.pathname.split("/")[1];
+        try {
+          const result = await window.__getComicsByTag(tag, lang, 1, 20);
+          state.tagTotal = result.total;
+          COMICS.length = 0;
+          COMICS.push(...result.items);
+          rebuildComicsById(COMICS);
+          renderAll();
+          showPaginationElements(false);
+        } catch (e) {
+          console.error("Tag filter failed:", e);
+        }
+      }
+    }
+
+    [tagFilter, tagDrawerGrid].forEach(container => {
+      if (!container) return;
+      container.addEventListener("click", (e) => {
+        const btn = (e.target).closest(".tag-btn");
+        if (btn) handleTagClick(btn.dataset.tag);
+      });
+    });
+
+    if (moreBtn) {
+      moreBtn.addEventListener("click", openTagDrawer);
+    }
+  }
+
+  function setupWaterfallClicks() {
+    const waterfall = document.getElementById("waterfall");
+    if (!waterfall) return;
+
+    waterfall.addEventListener("click", (e) => {
+      const target = e.target;
+      const likeBtn = target.closest(".like-btn");
+
+      if (likeBtn) {
+        const id = parseInt(likeBtn.dataset.id || "0");
+        const wasLiked = state.liked.has(id);
+        if (wasLiked) {
+          state.liked.delete(id);
+        } else {
+          state.liked.add(id);
+          window.__likeComic(id);
+        }
+        updateLikeBtn(likeBtn, id);
+
+        if (!wasLiked) {
+          const card = likeBtn.closest('.waterfall-card');
+          triggerLikeAnimation(card);
+        }
+
+        if (state.detailComic && state.detailComic.id === id) {
+          renderDetailSheet();
+        }
+        return;
+      }
+
+      const shareBtn = target.closest(".share-btn");
+      if (shareBtn) {
+        e.stopPropagation();
+        const id = parseInt(shareBtn.dataset.id || "0");
+        const comic = getComicById(id);
+        if (comic) handleShare(comic);
+        return;
+      }
+
+      const card = target.closest(".waterfall-card");
+      if (card) {
+        const id = parseInt(card.dataset.comicId || "0");
+        const comic = getComicById(id);
+        if (comic) openDetail(comic);
+      }
+    });
+  }
+
+  function setupCarouselClicks() {
+    const carousel = document.getElementById("carousel");
+    if (!carousel) return;
+
+    carousel.addEventListener("click", (e) => {
+      const target = e.target;
+      const likeBtn = target.closest(".like-btn");
+
+      if (likeBtn) {
+        const id = parseInt(likeBtn.dataset.id || "0");
+        const wasLiked = state.liked.has(id);
+        if (wasLiked) {
+          state.liked.delete(id);
+        } else {
+          state.liked.add(id);
+          window.__likeComic(id);
+        }
+
+        const cards = carousel.querySelectorAll(".carousel-card");
+        let cardWithLike = null;
+        cards.forEach(card => {
+          const cardId = parseInt(card.dataset.id || "0");
+          const btn = card.querySelector(".like-btn");
+          if (btn && cardId === id) {
+            const comic = getComicById(id);
+            const lang = window.location.pathname.split("/")[1];
+            const liked = state.liked.has(id);
+            btn.classList.toggle("liked", liked);
+            btn.innerHTML = `
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              <span>${formatLikesLocal(comic.likes + (liked ? 1 : 0), lang)}</span>
+            `;
+            cardWithLike = card;
+          }
+        });
+
+        if (!wasLiked && cardWithLike) {
+          triggerLikeAnimation(cardWithLike);
+        }
+
+        return;
+      }
+
+      const card = target.closest(".carousel-card");
+      if (card) {
+        const id = parseInt(card.dataset.id || "0");
+        const comic = getComicById(id);
+        if (comic) openDetail(comic);
+      }
+    });
+
+    function checkHash() {
+      const hash = window.location.hash;
+      if (hash.startsWith("#comic-")) {
+        const id = parseInt(hash.replace("#comic-", ""));
+        const comic = getComicById(id);
+        if (comic) openDetail(comic, false);
+      }
+    }
+    checkHash();
+    window.addEventListener("hashchange", checkHash);
+  }
+
+  renderAll();
+  showPaginationElements(true);
+  setupTagFilter();
+  setupWaterfallClicks();
+  setupCarouselClicks();
+})();
+</script>

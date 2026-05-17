@@ -1,0 +1,430 @@
+---
+export interface Props {
+  lang: "en" | "zh";
+}
+
+const { lang } = Astro.props;
+---
+
+<footer class="site-footer">
+  <div class="footer-newsletter">
+    <div class="container newsletter-inner">
+      <p class="newsletter-label">
+        {lang === "zh"
+          ? "订阅获取每周的中国式幽默与哲理"
+          : "Subscribe for a weekly dose of Chinese humor & philosophy"}
+      </p>
+      <form class="newsletter-form" id="newsletter-form">
+        <input
+          type="email"
+          id="newsletter-email"
+          class="newsletter-input"
+          placeholder={lang === "zh" ? "输入你的邮箱" : "Enter your email"}
+          required
+        />
+        <button type="submit" class="newsletter-btn" id="newsletter-btn">
+          {lang === "zh" ? "订阅" : "Subscribe"}
+        </button>
+      </form>
+      <p id="newsletter-message" class="newsletter-message"></p>
+    </div>
+  </div>
+
+  <div class="footer-main">
+    <div class="container footer-grid">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-logo">
+          <span class="footer-logo-text">{lang === "zh" ? "小林漫画" : "Xiaolin Comics"}</span>
+        </div>
+        <p class="footer-tagline">
+          {lang === "zh"
+            ? "用中国水墨，治愈世界。"
+            : "Healing the world with Chinese ink."}
+        </p>
+        <p class="footer-disclaimer">
+          {lang === "zh"
+            ? "非官方粉丝站 · 仅供展示与交流"
+            : "Unofficial fan site · For display & exchange"}
+        </p>
+      </div>
+
+      <div class="footer-col footer-explore-col">
+        <h4 class="footer-col-title">
+          {lang === "zh" ? "探索" : "Explore"}
+        </h4>
+        <nav class="footer-nav">
+          <a href={`/${lang}/`} class="footer-link">
+            {lang === "zh" ? "首页" : "Home"}
+          </a>
+          <a href={`/${lang}/search/`} class="footer-link">
+            {lang === "zh" ? "搜索" : "Search"}
+          </a>
+          <a href={`/${lang}/about/`} class="footer-link">
+            {lang === "zh" ? "关于" : "About"}
+          </a>
+        </nav>
+      </div>
+
+      <div class="footer-col footer-support-col">
+        <!-- <h4 class="footer-col-title">
+          {lang === "zh" ? "支持" : "Support"}
+        </h4>
+        <p class="footer-support-text">
+          {lang === "zh"
+            ? "如果这些漫画曾治愈过你，欢迎请我喝杯咖啡 ☕"
+            : "If these comics have healed you, buy me a coffee ☕"}
+        </p>
+        <a
+          href="https://buymeacoffee.com/xiaolincomics"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="footer-coffee-btn"
+        >
+          <span class="coffee-icon">☕</span>
+          <span>{lang === "zh" ? "请我喝杯咖啡" : "Buy me a coffee"}</span>
+        </a> -->
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <p class="footer-copy">
+        &copy; {new Date().getFullYear()} Xiaolin Comics.
+        {lang === "zh" ? "保留所有权利。" : "All rights reserved."}
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const t = {
+    zh: {
+      sending: "发送中...",
+      success: "订阅成功！",
+      alreadySubscribed: "该邮箱已订阅",
+      failed: "订阅失败，请稍后重试",
+      networkError: "网络错误，请稍后重试",
+      subscribe: "订阅",
+    },
+    en: {
+      sending: "Sending...",
+      success: "Subscribed successfully!",
+      alreadySubscribed: "This email is already subscribed.",
+      failed: "Subscription failed, please try again.",
+      networkError: "Network error, please try again.",
+      subscribe: "Subscribe",
+    },
+  };
+
+  function confetti() {
+    const count = 80;
+    const colors = ["#f44336", "#e91e63", "#9c27b0", "#2196f3", "#4caf50", "#ffeb3b", "#ff9800", "#00bcd4"];
+    const container = document.querySelector(".newsletter-inner") || document.body;
+    const rect = container.getBoundingClientRect();
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top;
+
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement("div");
+      const size = Math.random() * 8 + 4;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const angle = Math.random() * 360;
+      const distance = Math.random() * 300 + 100;
+      const rad = (angle * Math.PI) / 180;
+      const dx = Math.cos(rad) * distance;
+      const dy = Math.sin(rad) * distance + 200;
+      const duration = Math.random() * 1.5 + 1;
+      const delay = Math.random() * 0.3;
+
+      el.style.cssText =
+        "position:fixed;left:" + originX + "px;top:" + originY + "px;width:" + size +
+        "px;height:" + size + "px;background:" + color + ";border-radius:" +
+        (Math.random() > 0.5 ? "50%" : "2px") +
+        ";pointer-events:none;z-index:9999;" +
+        "transition:transform " + duration + "s ease-out " + delay + "s,opacity " + duration + "s ease-out " + delay + "s;" +
+        "transform:translate(0,0) rotate(0deg);opacity:1;";
+
+      document.body.appendChild(el);
+
+      requestAnimationFrame(function() {
+        el.style.transform = "translate(" + dx + "px," + dy + "px) rotate(" + (Math.random() * 720) + "deg)";
+        el.style.opacity = "0";
+      });
+
+      setTimeout(function() { el.remove(); }, (duration + delay) * 1000 + 100);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("newsletter-form");
+    const emailInput = document.getElementById("newsletter-email");
+    const btn = document.getElementById("newsletter-btn");
+    const msg = document.getElementById("newsletter-message");
+    const lang = document.documentElement.lang === "en" ? "en" : "zh";
+
+    if (!form || !emailInput || !btn || !msg) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = (emailInput as HTMLInputElement).value.trim();
+      if (!email) return;
+
+      (btn as HTMLButtonElement).disabled = true;
+      btn.textContent = t[lang].sending;
+      msg.textContent = "";
+      msg.className = "newsletter-message";
+
+      try {
+        const API_BASE = import.meta.env.PUBLIC_API_BASE || "";
+        const res = await fetch(`${API_BASE}/v1/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const json = await res.json();
+
+        if (json.code === 0) {
+          msg.textContent = t[lang].success;
+          msg.className = "newsletter-message success";
+          (emailInput as HTMLInputElement).value = "";
+          confetti();
+        } else if (json.code === 1002) {
+          msg.textContent = t[lang].alreadySubscribed;
+          msg.className = "newsletter-message error";
+        } else {
+          msg.textContent = json.message || t[lang].failed;
+          msg.className = "newsletter-message error";
+        }
+      } catch {
+        msg.textContent = t[lang].networkError;
+        msg.className = "newsletter-message error";
+      } finally {
+        (btn as HTMLButtonElement).disabled = false;
+        btn.textContent = t[lang].subscribe;
+      }
+    });
+  });
+</script>
+
+<style>
+  .footer-newsletter {
+    background: linear-gradient(135deg, #faf6f0 0%, #f5efe6 100%);
+    border-top: 1px solid #ede6dc;
+    border-bottom: 1px solid #ede6dc;
+    padding: 40px 0;
+  }
+
+  .newsletter-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .newsletter-label {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    max-width: 480px;
+  }
+
+  .newsletter-form {
+    display: flex;
+    width: 100%;
+    max-width: 420px;
+    gap: 8px;
+  }
+
+  .newsletter-input {
+    flex: 1;
+    padding: 11px 16px;
+    border: 1px solid #ddd6cc;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-primary);
+    background: #ffffff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .newsletter-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.08);
+  }
+
+  .newsletter-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  .newsletter-btn {
+    padding: 11px 22px;
+    background: var(--accent-primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .newsletter-btn:hover {
+    background: #555555;
+  }
+
+  .newsletter-btn:active {
+    transform: scale(0.97);
+  }
+
+  .newsletter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .newsletter-message {
+    font-size: 12px;
+    line-height: 1.5;
+    min-height: 18px;
+  }
+
+  .newsletter-message.success {
+    color: #2e7d32;
+  }
+
+  .newsletter-message.error {
+    color: #c62828;
+  }
+
+  .footer-main {
+    padding: 48px 0 20px;
+    background: #ffffff;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  @media (min-width: 640px) {
+    .footer-grid {
+      grid-template-columns: 1.5fr 1fr 1.5fr;
+      gap: 40px;
+    }
+  }
+
+  .footer-col-title {
+    font-family: var(--font-serif);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .footer-logo {
+    margin-bottom: 10px;
+  }
+
+  .footer-logo-text {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+
+  .footer-tagline {
+    font-family: var(--font-serif);
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    letter-spacing: 0.03em;
+    margin-bottom: 12px;
+  }
+
+  .footer-disclaimer {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+  }
+
+  .footer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .footer-link {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color 0.2s ease;
+    width: fit-content;
+  }
+
+  .footer-link:hover {
+    color: var(--text-primary);
+  }
+
+  .footer-support-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    letter-spacing: 0.03em;
+    margin-bottom: 16px;
+  }
+
+  .footer-coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #faf6f0;
+    border: 1px solid #ede6dc;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .footer-coffee-btn:hover {
+    background: #f5efe6;
+    border-color: #ddd6cc;
+  }
+
+  .footer-coffee-btn:active {
+    transform: scale(0.97);
+  }
+
+  .coffee-icon {
+    font-size: 16px;
+  }
+
+  .footer-bottom {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+    text-align: center;
+  }
+
+  .footer-copy {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+</style>

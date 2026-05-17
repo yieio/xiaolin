@@ -1,0 +1,90 @@
+---
+import { t } from "@lib/i18n";
+import type { Locale } from "@lib/i18n";
+
+export interface Props {
+  lang: Locale;
+  placeholder?: string;
+}
+
+const { lang, placeholder } = Astro.props;
+const placeholderText = placeholder ?? t("search.placeholder", lang);
+---
+
+<div class="search-wrapper">
+  <span class="search-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.3-4.3"></path>
+    </svg>
+  </span>
+  <input
+    type="search"
+    class="search-input"
+    placeholder={placeholderText}
+    autocomplete="off"
+  />
+  <button class="search-clear">×</button>
+</div>
+
+<style>
+  .search-wrapper {
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 44px 12px 42px;
+    border-radius: 24px;
+    border: 1.5px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.88);
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    letter-spacing: 0.02em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  .search-input:focus {
+    border-color: rgba(138,104,72,0.45);
+    box-shadow: 0 2px 14px rgba(138,104,72,0.08);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-faint);
+  }
+
+  .search-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .search-clear.visible {
+    display: block;
+  }
+</style>

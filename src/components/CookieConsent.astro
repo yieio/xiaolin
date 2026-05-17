@@ -1,0 +1,141 @@
+---
+export interface Props {
+  lang: "en" | "zh";
+}
+
+const { lang } = Astro.props;
+---
+
+<div class="cookie-consent" id="cookie-consent">
+  <p class="cookie-text">
+    {lang === "zh"
+      ? "本站使用 Plausible（隐私友好，无需 Cookie）和可选的 Google Analytics 来了解流量情况。接受即同意使用 GA4 分析 Cookie。"
+      : "This site uses Plausible (privacy-friendly, no cookies) and optional Google Analytics to understand traffic. Accept to enable GA4 analytics cookies."}
+  </p>
+  <div class="cookie-actions">
+    <button class="cookie-btn cookie-btn-essential" id="cookie-essential">
+      {lang === "zh" ? "仅必需" : "Essential Only"}
+    </button>
+    <button class="cookie-btn cookie-btn-accept" id="cookie-accept">
+      {lang === "zh" ? "接受全部" : "Accept All"}
+    </button>
+  </div>
+</div>
+
+<script is:inline>
+(function() {
+  var consent = localStorage.getItem("cookie-consent");
+  if (consent) {
+    return;
+  }
+
+  var banner = document.getElementById("cookie-consent");
+  var acceptBtn = document.getElementById("cookie-accept");
+  var essentialBtn = document.getElementById("cookie-essential");
+
+  if (!banner || !acceptBtn || !essentialBtn) return;
+
+  banner.style.display = "flex";
+
+  acceptBtn.addEventListener("click", function() {
+    localStorage.setItem("cookie-consent", "accepted");
+    var ga4Id = document.querySelector("[data-consent='ga4']");
+    if (ga4Id) {
+      var src = ga4Id.getAttribute("src");
+      ga4Id.setAttribute("src", src);
+    }
+    if (window.gtag) {
+      window.gtag("consent", "update", {
+        analytics_storage: "granted"
+      });
+    }
+    banner.style.display = "none";
+  });
+
+  essentialBtn.addEventListener("click", function() {
+    localStorage.setItem("cookie-consent", "essential");
+    banner.style.display = "none";
+  });
+})();
+</script>
+
+<style>
+  .cookie-consent {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    background: #1a1a1a;
+    color: #f0f0f0;
+    font-family: var(--font-body, 'Noto Sans SC', sans-serif);
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  }
+
+  .cookie-text {
+    margin: 0;
+    max-width: 640px;
+    flex: 1;
+  }
+
+  .cookie-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .cookie-btn {
+    font-family: var(--font-body, 'Noto Sans SC', sans-serif);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .cookie-btn:hover {
+    opacity: 0.85;
+  }
+
+  .cookie-btn-essential {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #555;
+  }
+
+  .cookie-btn-accept {
+    background: #ffffff;
+    color: #1a1a1a;
+  }
+
+  @media (max-width: 640px) {
+    .cookie-consent {
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .cookie-text {
+      font-size: 12px;
+    }
+
+    .cookie-actions {
+      width: 100%;
+    }
+
+    .cookie-btn {
+      flex: 1;
+      text-align: center;
+    }
+  }
+</style>

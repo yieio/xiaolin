@@ -1,0 +1,287 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import type { Locale } from "@lib/i18n";
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: "en" } },
+    { params: { lang: "zh" } },
+  ];
+}
+
+const { lang } = Astro.params as { lang: string };
+
+const VALID_LOCALES = ["en", "zh"];
+if (!VALID_LOCALES.includes(lang)) {
+  return Astro.redirect("/zh/", 302);
+}
+
+const typedLang = lang as Locale;
+---
+
+<BaseLayout
+  lang={typedLang}
+  title={typedLang === "zh" ? "关于小林漫画与本站" : "About Xiaolin Comics & This Site"}
+  description={
+    typedLang === "zh"
+      ? "小林漫画粉丝站 — 8000张水墨漫画翻译与展示，让世界感受中国式幽默与治愈"
+      : "Xiaolin Comics Fan Site — 8,000 translated ink-wash comics, bringing Chinese humor and healing to the world"
+  }
+>
+  <div class="about-page">
+    <div class="inner-container">
+
+      <div class="about-hero">
+        <div class="about-avatar">🎨</div>
+        <h1 class="about-title">
+          {typedLang === "zh" ? "关于小林漫画与本站" : "About Xiaolin Comics & This Site"}
+        </h1>
+      </div>
+
+      <div class="about-section">
+        <h2 class="about-section-title">
+          {typedLang === "zh" ? "🎨 关于原作者：小林" : "🎨 About the Author: Xiaolin"}
+        </h2>
+        <div class="about-author-card">
+          <img
+            src="/imgs/xiaolin.png"
+            alt="Xiaolin"
+            class="about-author-img"
+            width="120"
+            height="120"
+            loading="lazy"
+          />
+          <div class="about-author-info">
+            <p class="about-text">
+              {lang === "zh"
+                ? `这些温暖人心作品的背后，是原作者林帝浣先生，大家更熟悉他的笔名"小林"。他不仅是中山大学的教师，更是中国当代极具人气的漫画家、国画家和摄影师。`
+                : "The original author behind these heartwarming works is Lin Dihuan, widely known by his pen name Xiaolin. He is a teacher at Sun Yat-sen University in China, as well as a highly popular contemporary comic artist, traditional Chinese painter, and photographer."}
+            </p>
+            <p class="about-text">
+              {lang === "zh"
+                ? `他的作品独树一帜，将中国传统水墨画的写意美学，与现代人生活中的幽默、辛酸、温暖与自嘲完美融合。寥寥数笔配上一句金句，小林总能一针见血地捕捉到当代人的内心情感，提供一种充满哲理却又十分接地气的生活视角。`
+                : "His works uniquely combine the freehand aesthetic of traditional Chinese ink wash painting with modern life's humor, struggles, warmth, and self-deprecation. With just a few brushstrokes and a witty sentence, Xiaolin perfectly captures the essence of contemporary human emotions, offering a philosophical yet grounded perspective on life."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <h2 class="about-section-title">
+          {lang === "zh" ? "💡 关于这个粉丝站" : "💡 About This Fan Site"}
+        </h2>
+        <p class="about-text">
+          {lang === "zh"
+            ? "你好！我是小林漫画的一名超级粉丝。"
+            : "Hello! I am a super fan of Xiaolin Comics."}
+        </p>
+        <p class="about-text">
+          {lang === "zh"
+            ? `由于这些精美且充满智慧的漫画主要流传于中国互联网，为了打破语言的壁垒，让全世界都能感受到这份独特的"中国式幽默与治愈"，我利用业余时间自费搭建了这个海外展示站点。`
+            : "Because these beautiful and insightful comics are predominantly shared within the Chinese internet, I wanted to break the language barrier and introduce this unique Chinese-style humor and healing to the rest of the world."}
+        </p>
+        <p class="about-text">
+          {lang === "zh"
+            ? "目前，本画廊已经收录了 8,000 张小林漫画作品。我将它们精心整理并翻译成英文。希望无论你来自哪里，都能在这些水墨画中找到片刻的宁静、会心的一笑，以及继续前行的力量。"
+            : "As of now, this gallery hosts 8,000 pieces of Xiaolin's comic works, which I have collected, organized, and carefully translated into English. I hope that no matter where you are from, you can find a moment of peace, a knowing smile, and the strength to keep moving forward in these ink paintings."}
+        </p>
+      </div>
+
+      <div class="about-section">
+        <!-- <h2 class="about-section-title">
+          {lang === "zh" ? "☕ 支持本站" : "☕ Support the Project"}
+        </h2>
+        <p class="about-text">
+          {lang === "zh"
+            ? "翻译并维护一个拥有 8,000 张高清图片的海外高速服务器，需要耗费大量的时间和资金。"
+            : "Translating and maintaining a high-speed overseas server for 8,000 high-resolution images takes a lot of time and money."}
+        </p>
+        <p class="about-text">
+          {lang === "zh"
+            ? "如果你喜欢这里的漫画，或者在某一个疲惫的瞬间被它们所治愈，欢迎请我喝杯咖啡 ☕。你的慷慨支持将 100% 用于支付本站的服务器与带宽费用，帮助这个画廊持续运转下去，并且永远不会有广告。"
+            : "If you love these comics, or if they have healed you during an exhausting day, please consider buying me a coffee ☕. Your generous support will go 100% towards paying for the server hosting and bandwidth costs, keeping this gallery alive and ad-free for everyone to enjoy."}
+        </p>
+        <a
+          href="https://buymeacoffee.com/xiaolincomics"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="coffee-btn"
+        >
+          <span class="coffee-btn-icon">☕</span>
+          <span class="coffee-btn-text">
+            {lang === "zh" ? "请我喝杯咖啡" : "Buy me a coffee"}
+          </span>
+        </a> -->
+      </div>
+
+      <div class="about-section about-disclaimer">
+        <h2 class="about-section-title">
+          {lang === "zh" ? "⚠️ 版权与免责声明" : "⚠️ Copyright Disclaimer"}
+        </h2>
+        <p class="about-disclaimer-text">
+          {lang === "zh"
+            ? "免责声明：本网站为非官方、非盈利性质的粉丝翻译与展示项目。所有漫画艺术作品的版权、著作权及所有权均独家归属于原作者林帝浣（小林）先生所有。我们对创作者抱有深深的敬意。如果您是版权方且有任何疑虑，请与我们联系。"
+            : "Disclaimer: This website is an unofficial, non-profit fan translation and gallery project. All copyrights, moral rights, and ownership of the original comic artworks belong exclusively to the original author, Mr. Lin Dihuan (Xiaolin). We respect the creator deeply. If you are the copyright owner and have any concerns, please contact us."}
+        </p>
+      </div>
+
+      <div class="about-divider">✦ ✦ ✦</div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .about-page {
+    padding: 48px 0 80px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .about-hero {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .about-avatar {
+    font-size: 64px;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .about-title {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
+
+  .about-section {
+    margin-bottom: 44px;
+  }
+
+  .about-section-title {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    letter-spacing: 0.03em;
+  }
+
+  .about-text {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .about-author-card {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    background: #fafafa;
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid #f0f0f0;
+  }
+
+  .about-author-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid #e8e8e8;
+  }
+
+  .about-author-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .about-author-info .about-text:last-child {
+    margin-bottom: 0;
+  }
+
+  .coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFDD00;
+    color: #000000;
+    text-decoration: none;
+    padding: 12px 28px;
+    border-radius: 40px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: background 0.2s ease, transform 0.15s ease;
+    margin-top: 8px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .coffee-btn:hover {
+    background: #FFC800;
+    transform: translateY(-1px);
+  }
+
+  .coffee-btn:active {
+    transform: translateY(0);
+  }
+
+  .coffee-btn-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .about-disclaimer {
+    margin-top: 48px;
+  }
+
+  .about-disclaimer-text {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text-faint, #b0b0b0);
+    letter-spacing: 0.02em;
+  }
+
+  .about-divider {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-faint, #d0d0d0);
+    letter-spacing: 0.4em;
+  }
+
+  @media (max-width: 768px) {
+    .about-page {
+      padding: 32px 20px 60px;
+    }
+
+    .about-title {
+      font-size: 1.6rem;
+    }
+
+    .about-author-card {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .about-author-img {
+      width: 100px;
+      height: 100px;
+    }
+
+    .coffee-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>

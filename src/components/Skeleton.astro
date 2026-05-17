@@ -1,0 +1,71 @@
+<div class="waterfall-card skeleton-card">
+  <div class="skeleton-image" />
+  <div class="skeleton-line" />
+  <div class="skeleton-meta">
+    <div class="skeleton-tags" />
+    <div class="skeleton-like" />
+  </div>
+</div>
+
+<style>
+  .waterfall-card {
+    display: inline-block;
+    width: 100%;
+    break-inside: avoid;
+    margin-bottom: 12px;
+    padding: 10px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.70);
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+  }
+
+  .skeleton-image {
+    aspect-ratio: 2/3;
+    background: #e8e2d8;
+    border-radius: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .skeleton-line {
+    height: 16px;
+    border-radius: 4px;
+    background: #e8e2d8;
+    animation: pulse 1.5s ease-in-out infinite;
+    animation-delay: 0.2s;
+    width: 80%;
+  }
+
+  .skeleton-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .skeleton-tags {
+    height: 12px;
+    width: 40%;
+    border-radius: 8px;
+    background: #e8e2d8;
+    animation: pulse 1.5s ease-in-out infinite;
+    animation-delay: 0.3s;
+  }
+
+  .skeleton-like {
+    height: 14px;
+    width: 40px;
+    border-radius: 8px;
+    background: #e8e2d8;
+    animation: pulse 1.5s ease-in-out infinite;
+    animation-delay: 0.4s;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>

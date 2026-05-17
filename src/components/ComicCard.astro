@@ -1,0 +1,167 @@
+---
+import type { Comic } from "@/lib/api";
+import { formatLikes, getTagLabel } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
+
+interface Props {
+  comic: Comic;
+  lang: Locale;
+  liked?: boolean;
+}
+
+const { comic, lang, liked = false } = Astro.props;
+const text = lang === "zh" ? comic.text.zh : comic.text.en;
+const title = lang === "zh" ? comic.title.zh : comic.title.en;
+---
+
+<div class="waterfall-card" data-comic-id={comic.id}>
+  <img
+    class="waterfall-image"
+    src={comic.image}
+    alt={title}
+    loading="lazy"
+    draggable="false"
+  />
+  <p class="waterfall-text" set:html={text.replace(/\n/g, "<br/>")}></p>
+  <div class="waterfall-tags-row">
+    {(comic.tags[lang] || []).slice(0, 1).map(tag => <span class="waterfall-tag">{tag}</span>)}
+  </div>
+  <div class="waterfall-meta">
+    <button class="like-btn {liked ? 'liked' : ''}" data-action="like" data-id={comic.id}>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <span>{formatLikes(comic.likes + (liked ? 1 : 0), lang)}</span>
+    </button>
+    <button class="share-btn" data-action="share" data-id={comic.id}>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<style>
+  .waterfall-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    break-inside: avoid;
+    margin-bottom: 16px;
+    padding: 12px 12px 14px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+
+  .waterfall-card:active {
+    transform: scale(0.98);
+  }
+
+  .waterfall-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+    display: block;
+    -webkit-user-drag: none;
+  }
+
+  .waterfall-text {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 1.75;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    white-space: pre-line;
+    position: relative;
+    z-index: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .waterfall-tags-row {
+    display: flex;
+    gap: 6px; 
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .waterfall-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .waterfall-tag {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    background: #f5f5f5;
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    white-space: nowrap;
+  }
+
+  .like-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    padding: 4px 8px;
+    transition: color 0.2s ease, transform 0.15s ease;
+  }
+
+  .like-btn:active {
+    transform: scale(0.9);
+  }
+
+  .like-btn.liked {
+    color: var(--heart-active);
+  }
+
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: color 0.2s ease, transform 0.15s ease;
+  }
+
+  .share-btn:active {
+    transform: scale(0.9);
+    color: var(--text-secondary);
+  }
+</style>

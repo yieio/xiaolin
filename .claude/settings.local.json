@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"D:\\\\\\\\VsCodeProjects\\\\\\\\xiaolin\\\\\\\\frontend\")",
+      "Bash(npm --version)",
+      "Bash(cd \"D:\\\\\\\\VsCodeProjects\\\\\\\\xiaolin\\\\\\\\frontend\")",
+      "Bash(npm create *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx astro *)",
+      "Bash(wc *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find \"D:\\\\\\\\VsCodeProjects\\\\\\\\xiaolin\\\\\\\\frontend\\\\\\\\dist\" -name \"*.css\")"
+    ]
+  }
+}

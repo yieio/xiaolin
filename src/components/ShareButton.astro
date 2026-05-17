@@ -1,0 +1,77 @@
+---
+import type { Locale } from "@lib/i18n";
+import { t } from "@lib/i18n";
+
+export interface Props {
+  lang: Locale;
+  title: string;
+  url: string;
+}
+
+const { lang, title, url } = Astro.props;
+---
+
+<button class="share-btn" data-share-title={title} data-share-url={url}>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+  </svg>
+  <span>{t("comic.share", lang)}</span>
+</button>
+
+<script>
+  function setupShareButtons() {
+    document.querySelectorAll<HTMLButtonElement>(".share-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const title = btn.dataset.shareTitle || "";
+        const url = btn.dataset.shareUrl || location.href;
+        const text = `Check out this comic: ${title}`;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, text, url });
+          } catch {
+            // user cancelled or error — silently ignore
+          }
+        } else {
+          try {
+            await navigator.clipboard.writeText(url);
+            const span = btn.querySelector("span");
+            if (span) {
+              const original = span.textContent;
+              span.textContent = lang === "zh" ? "已复制!" : "Copied!";
+              setTimeout(() => { span.textContent = original; }, 2000);
+            }
+          } catch {
+            // clipboard failed — silently ignore
+          }
+        }
+      });
+    });
+  }
+
+  setupShareButtons();
+  document.addEventListener("astro:after-swap", setupShareButtons);
+</script>
+
+<style>
+  .share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .share-btn:hover {
+    background: var(--color-border);
+  }
+</style>

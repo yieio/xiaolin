@@ -1,0 +1,651 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import ComicDrawer from "@components/ComicDrawer.astro";
+import { getComic, ALL_TAGS, HOT_ZH, HOT_EN } from "@lib/api";
+import { getTagLabel, t, formatLikes } from "@lib/i18n";
+import type { Locale } from "@lib/i18n";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const API_BASE = import.meta.env.PUBLIC_API_BASE || "http://localhost:8000";
+  let ids: number[] = [];
+  try {
+    const res = await fetch(`${API_BASE}/v1/comics/ids`);
+    if (res.ok) {
+      const json = await res.json();
+      ids = json.data || [];
+    }
+  } catch {
+    ids = [];
+  }
+
+  if (ids.length === 0) {
+    for (let i = 1; i <= 12; i++) {
+      ids.push(i);
+    }
+  }
+
+  const paths = [];
+  for (const id of ids) {
+    paths.push({ params: { lang: "en", id: String(id) } });
+    paths.push({ params: { lang: "zh", id: String(id) } });
+  }
+  return paths;
+}
+
+const { lang, id } = Astro.params as { lang: string; id: string };
+
+const VALID_LOCALES = ["en", "zh"];
+if (!VALID_LOCALES.includes(lang)) {
+  return Astro.redirect("/zh/", 302);
+}
+
+const typedLang = lang as Locale;
+const comicId = parseInt(id, 10);
+
+let comic: Awaited<ReturnType<typeof getComic>>;
+let error: string | null = null;
+
+if (isNaN(comicId)) {
+  error = "Invalid comic ID";
+} else {
+  try {
+    comic = await getComic(comicId, typedLang);
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Failed to load comic";
+  }
+}
+
+if (error || !comic!) {
+  return Astro.redirect(`/${typedLang}/`, 302);
+}
+
+const comicTitle = typedLang === "zh" ? comic!.title.zh : comic!.title.en;
+const comicDesc = typedLang === "zh" ? comic!.text.zh : comic!.text.en;
+const imageUrl = comic!.image;
+// @ts-ignore
+const pageUrl = `${import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321"}/${typedLang}/comic/${comic!.id}`;
+---
+
+<BaseLayout
+  lang={typedLang}
+  title={`${comicTitle} — Xiaolin Comics`}
+  description={comicDesc}
+  ogImage={imageUrl}
+  canonicalURL={pageUrl}
+>
+  <div class="detail-page">
+    <div class="card-stack">
+      <div class="card-stack-shadow-1"></div>
+      <div class="card-stack-shadow-2"></div>
+      <div class="detail-page-card">
+        <img class="detail-page-image" src={comic!.image} alt={comicTitle} draggable="false" />
+        <p class="detail-page-text">{comicDesc}</p>
+        <div class="card-actions">
+          <button class="like-btn" id="card-like-btn" data-id={comic!.id}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span id="card-likes-count">{formatLikes(comic!.likes, typedLang)}</span>
+          </button>
+          <button class="share-btn" id="card-share-btn" data-id={comic!.id}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-page-info">
+      <div class="detail-page-header"> 
+        <div class="detail-page-meta">
+          <h1 class="detail-page-title">{comicTitle}</h1>
+          <p class="detail-page-date">{comic!.date}</p>
+        </div>
+      </div>
+      <div class="detail-page-tags">
+        {comic!.tags[typedLang].map((tag) => (
+          <span class="detail-page-tag">{getTagLabel(tag, typedLang)}</span>
+        ))}
+      </div>
+      <div class="detail-page-author">
+        <div><img src="/imgs/xiaolin.png"  class="detail-page-author-avatar" alt="Xiaolin Comics" draggable="false" /></div>
+        <div class="detail-page-author-info">
+          <h4>{t("comic.authorName", typedLang)}</h4>
+          <p>{t("comic.authorBio", typedLang)}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script type="application/json" id="api-config" set:html={JSON.stringify({
+  apiBase: import.meta.env.PUBLIC_API_BASE || ""
+})}></script>
+
+<style is:global>
+  .detail-page {
+    min-height: 100vh;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  /* Card stack wrapper */
+  .card-stack {
+    position: relative;
+    width: calc(100% - 40px);
+    max-width: 320px;
+    margin: 40px auto 0;
+  }
+
+  @media (min-width: 768px) {
+    .card-stack {
+      max-width: 360px;
+    }
+  }
+
+  /* Stacked shadow card behind (closer) */
+  .card-stack-shadow-1 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+    transform: translateY(15px) scale(0.96) rotate(4deg);
+    transform-origin: center center;
+  }
+
+  /* Stacked shadow card behind (further) */
+  .card-stack-shadow-2 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+    transform: translateY(28px) scale(0.92) rotate(-3deg);
+    transform-origin: center center;
+  }
+
+  /* Front card (straight, no rotation) */
+  .detail-page-card {
+    position: relative;
+    z-index: 1;
+    padding: 12px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .detail-page-card {
+      padding: 14px 14px 18px;
+    }
+  }
+
+  .detail-page-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+    display: block;
+  }
+
+  .detail-page-text {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.6;
+    letter-spacing: 0.03em;
+    color: var(--text-primary);
+    white-space: pre-line;
+    position: relative;
+    z-index: 1;
+    text-align: left;
+  }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .like-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    padding: 4px 8px;
+    transition: color 0.2s ease, transform 0.15s ease;
+  }
+
+  .like-btn:active {
+    transform: scale(0.9);
+  }
+
+  .like-btn.liked {
+    color: var(--heart-active);
+  }
+
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: color 0.2s ease, transform 0.15s ease;
+  }
+
+  .share-btn:active {
+    transform: scale(0.9);
+    color: var(--text-secondary);
+  }
+
+  .detail-page-info {
+    padding: 20px 20px 40px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .detail-page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .detail-page-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    color: var(--text-primary);
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .detail-page-back:hover {
+    background: #eeeeee;
+  }
+
+  .detail-page-meta {
+    flex: 1;
+  }
+
+  .detail-page-title {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--text-primary);
+    letter-spacing: 0.03em;
+    margin: 0 0 5px 0;
+  }
+
+  .detail-page-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+
+  .detail-page-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .detail-page-tag {
+    font-size: 10px;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+    padding: 5px 12px;
+    border-radius: 16px;
+    border: 1px solid #e5e5e5;
+    background: #fafafa;
+  }
+
+  .detail-page-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+  }
+
+  .detail-page-author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .detail-page-author-info h4 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.03em;
+    margin: 0 0 3px 0;
+  }
+
+  .detail-page-author-info p {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    margin: 0;
+  }
+
+  /* Share modal */
+  .share-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .share-modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .share-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(2px);
+  }
+
+  .share-modal {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    padding: 16px 20px 28px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  .share-modal-overlay.visible .share-modal {
+    transform: translateY(0);
+  }
+
+  .share-modal-handle {
+    width: 32px;
+    height: 4px;
+    background: #d4c7b5;
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+
+  .share-modal-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  .share-platforms {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .share-platform {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: #fff;
+    transition: transform 0.15s, opacity 0.15s;
+    min-width: 56px;
+  }
+
+  .share-platform:active {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+
+  .share-platform svg {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .share-platform-x svg { background: #000; color: #fff; }
+  .share-platform-fb svg { background: #1877F2; color: #fff; }
+  .share-platform-wa svg { background: #25D366; color: #fff; }
+  .share-platform-pin svg { background: #E60023; color: #fff; }
+  .share-platform-copy svg { background: #f0f0f0; color: #333; }
+
+  .share-platform span {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+  }
+
+  .share-modal-close {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .share-modal-close:active {
+    background: #eaeaea;
+  }
+</style>
+
+<script is:inline>
+(function() {
+  const comicId = parseInt(document.getElementById("card-like-btn")?.dataset.id || "0");
+  const lang = window.location.pathname.split("/")[1];
+  let liked = false;
+
+  function getShareUrl() {
+    return window.location.origin + "/" + lang + "/comic/" + comicId;
+  }
+
+  function getShareTitle() {
+    const el = document.querySelector(".detail-page-title");
+    return el ? el.textContent : "";
+  }
+
+  function getShareText() {
+    const el = document.querySelector(".detail-page-text");
+    return el ? el.textContent.replace(/\n/g, " ") : "";
+  }
+
+  // Like button
+  const likeBtn = document.getElementById("card-like-btn");
+  if (likeBtn) {
+    likeBtn.addEventListener("click", async () => {
+      liked = !liked;
+      likeBtn.classList.toggle("liked", liked);
+
+      const countSpan = document.getElementById("card-likes-count");
+      if (countSpan) {
+        const currentCount = parseInt(countSpan.textContent.replace(/[^0-9]/g, "")) || 0;
+        const newCount = currentCount + (liked ? 1 : 0);
+        countSpan.textContent = newCount >= 1000 ? (newCount / 1000).toFixed(1) + "k" : String(newCount);
+      }
+
+      if (liked) {
+        const configEl = document.getElementById("api-config");
+        let apiBase = "";
+        if (configEl) {
+          try { apiBase = JSON.parse(configEl.textContent || "{}").apiBase || ""; } catch {}
+        }
+        if (apiBase) {
+          fetch(apiBase + "/v1/comics/" + comicId + "/like", { method: "POST" }).catch(() => {});
+        }
+      }
+
+      // Like animation
+      const card = document.querySelector(".detail-page-card");
+      if (card && liked) {
+        const heart = document.createElement("div");
+        heart.style.cssText = "position:absolute;top:50%;left:50%;font-size:48px;pointer-events:none;z-index:10;transform:translate(-50%,-50%) scale(0);animation:likePop 0.6s ease forwards;";
+        heart.textContent = "\u2764\uFE0F";
+        card.appendChild(heart);
+        setTimeout(() => heart.remove(), 650);
+      }
+    });
+  }
+
+  // Share button
+  const shareBtn = document.getElementById("card-share-btn");
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const title = getShareTitle();
+      const text = getShareText();
+      const url = getShareUrl();
+      const shareText = title + " \u2014 " + text;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text: shareText, url });
+          return;
+        } catch (e) {
+          if (e.name !== "AbortError") console.error("Share failed:", e);
+        }
+      }
+
+      showShareModal(title, text, url);
+    });
+  }
+
+  // Share modal
+  function buildShareModal(title, text, urlStr) {
+    const u = encodeURIComponent(urlStr);
+    const t = encodeURIComponent(title);
+    const tx = encodeURIComponent(text);
+    const imgSrc = document.querySelector(".detail-page-image")?.getAttribute("src") || "";
+    const img = encodeURIComponent(imgSrc);
+
+    const platforms = [
+      { name: "X", cls: "share-platform-x", href: "https://twitter.com/intent/tweet?url=" + u + "&text=" + t + "%20%E2%80%94%20" + tx, svg: '<path d="M4 4h4.5l4.9 7 5.6-7H22l-6.6 8.4 6.6 9.6h-4.5l-5.3-7.7-6.1 7.7H2l7.2-9L4 4z"/>' },
+      { name: "Facebook", cls: "share-platform-fb", href: "https://www.facebook.com/sharer/sharer.php?u=" + u, svg: '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>' },
+      { name: "WhatsApp", cls: "share-platform-wa", href: "https://api.whatsapp.com/send?text=" + tx + "%20" + u, svg: '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.83 11.83 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.9 11.9 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.82 11.82 0 0 0-3.48-8.413z"/>' },
+      { name: "Pinterest", cls: "share-platform-pin", href: "https://pinterest.com/pin/create/button/?url=" + u + "&media=" + img + "&description=" + t + "%20%E2%80%94%20" + tx, svg: '<path d="M12 0a12 12 0 0 0-4.73 23.1c-.06-.56-.01-1.22.12-1.83l.88-3.74s-.22-.44-.22-1.08c0-1.02.59-1.78 1.32-1.78.62 0 .92.47.92 1.03 0 .62-.4 1.56-.6 2.42-.17.72.36 1.3 1.07 1.3 1.28 0 2.27-1.35 2.27-3.3 0-1.73-1.24-2.94-3-2.94-2.05 0-3.25 1.54-3.25 3.13 0 .62.24 1.28.53 1.64.06.07.07.13.05.2l-.18.74c-.03.13-.1.16-.24.1-.9-.42-1.46-1.73-1.46-2.78 0-2.26 1.64-4.34 4.74-4.34 2.49 0 4.42 1.77 4.42 4.14 0 2.47-1.56 4.46-3.72 4.46-.73 0-1.41-.38-1.64-.82l-.45 1.7c-.16.62-.6 1.4-.9 1.88A12 12 0 1 0 12 0z"/>' },
+      { name: "Copy Link", cls: "share-platform-copy", href: "#", svg: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>' }
+    ];
+
+    const links = platforms.map(p => {
+      if (p.cls === "share-platform-copy") {
+        return '<a class="share-platform ' + p.cls + '" href="#" data-action="copy-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + p.svg + '</svg><span>' + p.name + '</span></a>';
+      }
+      return '<a class="share-platform ' + p.cls + '" href="' + p.href + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor">' + p.svg + '</svg><span>' + p.name + '</span></a>';
+    }).join("");
+
+    return '<div class="share-modal-backdrop"></div><div class="share-modal"><div class="share-modal-handle"></div><div class="share-modal-title">' + (lang === "zh" ? "分享到" : "Share to") + '</div><div class="share-platforms">' + links + '</div><button class="share-modal-close">' + (lang === "zh" ? "取消" : "Cancel") + '</button></div>';
+  }
+
+  function showShareModal(title, text, urlStr) {
+    const existing = document.querySelector(".share-modal-overlay");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.className = "share-modal-overlay";
+    overlay.innerHTML = buildShareModal(title, text, urlStr);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    overlay.querySelector(".share-modal-backdrop")?.addEventListener("click", closeShareModal);
+    overlay.querySelector(".share-modal-close")?.addEventListener("click", closeShareModal);
+
+    const copyBtn = overlay.querySelector('[data-action="copy-link"]');
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          await navigator.clipboard.writeText(urlStr);
+        } catch {
+          const input = document.createElement("input");
+          input.value = urlStr;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand("copy");
+          document.body.removeChild(input);
+        }
+        copyBtn.querySelector("span").textContent = lang === "zh" ? "已复制" : "Copied";
+        setTimeout(() => { copyBtn.querySelector("span").textContent = "Copy Link"; }, 1500);
+      });
+    }
+  }
+
+  function closeShareModal() {
+    const overlay = document.querySelector(".share-modal-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("visible");
+    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
+  }
+
+  // Like pop animation keyframes
+  const style = document.createElement("style");
+  style.textContent = "@keyframes likePop{0%{transform:translate(-50%,-50%) scale(0);opacity:1}50%{transform:translate(-50%,-50%) scale(1.4);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}";
+  document.head.appendChild(style);
+})();
+</script>

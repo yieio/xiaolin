@@ -1,0 +1,48 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import ComicsPageContent from "@components/ComicsPageContent.astro";
+import { getComics, getFeaturedComics, getLabels } from "@lib/api";
+import type { Locale } from "@lib/i18n";
+
+const { lang, page: pageStr } = Astro.params as { lang: string; page: string };
+
+const VALID_LOCALES = ["en", "zh"];
+if (!VALID_LOCALES.includes(lang)) {
+  return Astro.redirect("/zh/", 302);
+}
+
+const typedLang = lang as Locale;
+const PAGE_SIZE = 20;
+
+const pageNum = parseInt(pageStr, 10);
+
+if (isNaN(pageNum) || pageNum <= 1) {
+  return Astro.redirect(`/${typedLang}/`, 302);
+}
+
+const comics = await getComics(typedLang, pageNum, PAGE_SIZE);
+const featured = await getFeaturedComics(typedLang);
+const labels = await getLabels(typedLang);
+
+const total = comics.total || 0;
+const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+
+if (pageNum > totalPages) {
+  return Astro.redirect(`/${typedLang}/`, 302);
+}
+---
+
+<BaseLayout
+  lang={typedLang}
+  title={typedLang === "zh" ? "小林漫画 — 每日一画" : "Xiaolin Comics — Daily Comics"}
+>
+  <ComicsPageContent
+    lang={typedLang}
+    comics={comics.items}
+    featured={featured}
+    labels={labels}
+    currentPage={pageNum}
+    totalPages={totalPages}
+    total={total}
+  />
+</BaseLayout>
