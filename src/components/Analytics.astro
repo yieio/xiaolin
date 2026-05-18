@@ -2,33 +2,35 @@
 const GA4_ID = import.meta.env.PUBLIC_GA4_ID;
 const PLAUSIBLE_DOMAIN = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;
 const lang = Astro.props.lang || "zh";
-
-const gtagScript = GA4_ID ? `
-window.dataLayer = window.dataLayer || [];
-function gtag(){ dataLayer.push(arguments); }
-gtag("js", new Date());
-gtag("config", "${GA4_ID}", {
-  anonymize_ip: true,
-  user_properties: { language: "${lang}" }
-});
-` : "";
 ---
 
-{
-  PLAUSIBLE_DOMAIN && (
-    <script
-      defer
-      data-domain={PLAUSIBLE_DOMAIN}
-      src="https://plausible.io/js/script.js"
-    ></script>
-  )
-}
+{/* Plausible 统计代码 */}
+{PLAUSIBLE_DOMAIN && (
+  <script
+    is:inline
+    defer
+    data-domain={PLAUSIBLE_DOMAIN}
+    src="https://plausible.io/js/script.js"
+  ></script>
+)}
 
-{
-  GA4_ID && (
-    <>
-      <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}></script>
-      <script set:html={gtagScript} />
-    </>
-  )
-}
+{/* GA4 统计代码 */}
+{GA4_ID && (
+  <>
+    {/* 必须加 is:inline，防止被 Astro 劫持打包 */}
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}></script>
+    
+    {/* 使用 define:vars 优雅且安全地传入环境变量，Astro 会自动处理为原生内联脚本 */}
+    <script is:inline define:vars={{ GA4_ID, lang }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+
+      // 初始化 GA4 并传入自定义属性
+      gtag('config', GA4_ID, {
+        anonymize_ip: true,
+        user_properties: { language: lang }
+      });
+    </script>
+  </>
+)}
