@@ -554,6 +554,151 @@ const showPagination = totalPages > 1;
     letter-spacing: 0.04em;
     white-space: nowrap;
   }
+
+  :global(.poster-modal-overlay) {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  :global(.poster-modal-overlay.visible) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  :global(.poster-modal-backdrop) {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  :global(.poster-modal) {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px 32px;
+    z-index: 1;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 90vh;
+  }
+
+  :global(.poster-modal-overlay.visible .poster-modal) {
+    transform: translateY(0);
+  }
+
+  :global(.poster-modal-handle) {
+    width: 32px;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+
+  :global(.poster-modal-title) {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+
+  :global(.poster-modal-loading) {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 60px 0;
+    letter-spacing: 0.04em;
+  }
+
+  :global(.poster-modal-error) {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    color: #e74c3c;
+    padding: 40px 0 20px;
+    letter-spacing: 0.04em;
+  }
+
+  :global(.poster-modal-preview) {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  :global(.poster-modal-image) {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    display: block;
+  }
+
+  :global(.poster-modal-actions) {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 18px;
+    flex-shrink: 0;
+  }
+
+  :global(.poster-save-btn) {
+    flex: 1;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+    background: var(--text-primary);
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+  }
+
+  :global(.poster-save-btn:active) {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  :global(.poster-close-btn) {
+    flex: 1;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    background: #f5f5f5;
+    border: none;
+    border-radius: 12px;
+    padding: 13px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+
+  :global(.poster-close-btn:active) {
+    transform: scale(0.97);
+    background: #eaeaea;
+  }
 </style>
 
 <script type="application/json" id="api-config" set:html={JSON.stringify({
@@ -565,6 +710,8 @@ const showPagination = totalPages > 1;
 <script type="application/json" id="featured-data" set:html={JSON.stringify(featured)}></script>
 
 <script type="application/json" id="labels-data" set:html={JSON.stringify(labels)}></script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
   import { likeComic, getComicsByTag } from "@lib/api";
@@ -759,6 +906,137 @@ const showPagination = totalPages > 1;
     setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
   }
 
+  async function generatePoster(comic, lang) {
+    const brand = lang === "zh" ? "小林漫画" : "Xiaolin Comics";
+
+    const drawer = document.getElementById("comic-drawer");
+    const originalCard = drawer.querySelector(".card-stack");
+    if (!originalCard) throw new Error("Card-stack not found");
+
+    const cardClone = originalCard.cloneNode(true);
+
+    const container = document.createElement("div");
+    container.style.cssText = "display:inline-block;background:#ffffff;padding:32px 28px 18px;";
+
+    cardClone.style.marginBottom = "0";
+    container.appendChild(cardClone);
+
+    const brandEl = document.createElement("div");
+    brandEl.style.cssText = "text-align:center;font-family:'Noto Sans SC',sans-serif;font-size:12px;color:#bbbbbb;letter-spacing:0.08em;padding:16px 0 8px;";
+    brandEl.textContent = brand;
+    container.appendChild(brandEl);
+
+    container.style.position = "fixed";
+    container.style.left = "-9999px";
+    container.style.top = "0";
+    container.style.zIndex = "-1";
+    document.body.appendChild(container);
+
+    const imgs = container.querySelectorAll("img");
+    Array.from(imgs).forEach(function (img) {
+      var src = img.getAttribute("src");
+      if (src && src.startsWith("http") && !src.startsWith(location.origin)) {
+        img.setAttribute("src", "/api/proxy-image?url=" + encodeURIComponent(src));
+      }
+    });
+
+    await Promise.all(Array.from(imgs).map(function (img) {
+      if (img.complete && img.naturalWidth > 0) return;
+      return new Promise(function (resolve) {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+    }));
+
+    try {
+      const scale = 3;
+      const canvas = await html2canvas(container, {
+        scale: scale,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        width: container.scrollWidth,
+        height: container.scrollHeight,
+      });
+      return canvas.toDataURL("image/png");
+    } finally {
+      document.body.removeChild(container);
+    }
+  }
+
+  async function showPosterModal(comic, lang) {
+    const existing = document.querySelector(".poster-modal-overlay");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.className = "poster-modal-overlay";
+
+    const loadingText = lang === "zh" ? "生成海报中..." : "Generating poster...";
+    overlay.innerHTML =
+      '<div class="poster-modal-backdrop"></div>' +
+      '<div class="poster-modal">' +
+        '<div class="poster-modal-loading">' + loadingText + '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    try {
+      const dataUrl = await generatePoster(comic, lang);
+      const saveText = lang === "zh" ? "保存图片" : "Save Image";
+      const closeText = lang === "zh" ? "关闭" : "Close";
+      const title = lang === "zh" ? comic.title.zh : comic.title.en;
+
+      overlay.innerHTML =
+        '<div class="poster-modal-backdrop"></div>' +
+        '<div class="poster-modal">' +
+          '<div class="poster-modal-handle"></div>' +
+          '<div class="poster-modal-title">' + title + '</div>' +
+          '<div class="poster-modal-preview">' +
+            '<img class="poster-modal-image" src="' + dataUrl + '" alt="' + title + '" />' +
+          '</div>' +
+          '<div class="poster-modal-actions">' +
+            '<button class="poster-save-btn">' + saveText + '</button>' +
+            '<button class="poster-close-btn">' + closeText + '</button>' +
+          '</div>' +
+        '</div>';
+
+      overlay.querySelector(".poster-modal-backdrop").addEventListener("click", closePosterModal);
+      overlay.querySelector(".poster-close-btn").addEventListener("click", closePosterModal);
+
+      const saveBtn = overlay.querySelector(".poster-save-btn");
+      saveBtn.addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "_") + ".png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        const savedText = lang === "zh" ? "已保存" : "Saved";
+        saveBtn.textContent = savedText;
+        setTimeout(() => { saveBtn.textContent = saveText; }, 2000);
+      });
+    } catch (e) {
+      overlay.innerHTML =
+        '<div class="poster-modal-backdrop"></div>' +
+        '<div class="poster-modal">' +
+          '<div class="poster-modal-handle"></div>' +
+          '<div class="poster-modal-error">' + (lang === "zh" ? "海报生成失败" : "Poster generation failed") + '</div>' +
+          '<button class="poster-close-btn">' + (lang === "zh" ? "关闭" : "Close") + '</button>' +
+        '</div>';
+      overlay.querySelector(".poster-modal-backdrop").addEventListener("click", closePosterModal);
+      overlay.querySelector(".poster-close-btn").addEventListener("click", closePosterModal);
+    }
+  }
+
+  function closePosterModal() {
+    const overlay = document.querySelector(".poster-modal-overlay");
+    if (!overlay) return;
+    overlay.classList.remove("visible");
+    setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
+  }
+
   function getFiltered() {
     return [...COMICS];
   }
@@ -936,6 +1214,7 @@ const showPagination = totalPages > 1;
               <div class="detail-date"></div>
             </div>
             <div class="detail-actions">
+              <button class="poster-btn" data-action="poster" data-id=""></button>
               <button class="like-btn" data-action="like" data-id=""></button>
               <button class="share-btn detail-share-btn" data-action="share" data-id="">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -978,6 +1257,9 @@ const showPagination = totalPages > 1;
     `;
     const shareBtn = drawer.querySelector(".share-btn");
     if (shareBtn) shareBtn.dataset.id = comic.id;
+
+    const posterBtn = drawer.querySelector(".poster-btn");
+    if (posterBtn) posterBtn.dataset.id = comic.id;
 
     drawer.querySelector(".detail-tags").innerHTML = (comic.tags[lang] || []).map(tag =>
       `<span class="detail-tag">${tag}</span>`
@@ -1034,6 +1316,16 @@ const showPagination = totalPages > 1;
         const id = parseInt(detailShareBtn.dataset.id || "0");
         const comic = getComicById(id);
         if (comic) handleShare(comic);
+      };
+    }
+
+    const detailPosterBtn = drawer.querySelector(".poster-btn");
+    if (detailPosterBtn) {
+      detailPosterBtn.onclick = (e) => {
+        e.stopPropagation();
+        const id = parseInt(detailPosterBtn.dataset.id || "0");
+        const comic = getComicById(id);
+        if (comic) showPosterModal(comic, lang);
       };
     }
 
